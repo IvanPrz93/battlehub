@@ -1,0 +1,5 @@
+out
+.env
+*dev*
+*test*
+
