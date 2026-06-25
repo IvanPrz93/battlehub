@@ -21,7 +21,7 @@ func (cfg *apiConfig) handlerMyProfile(w http.ResponseWriter, r *http.Request) {
 
 	user, err := cfg.db.GetUserByID(r.Context(), userID)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
+		respondWithError(w, http.StatusNotFound, "Cannot find user", err)
 		return
 	}
 
@@ -30,6 +30,9 @@ func (cfg *apiConfig) handlerMyProfile(w http.ResponseWriter, r *http.Request) {
 			Username:		user.Username,
 			Email:			user.Email,
 			CreatedAt: 		user.CreatedAt,
+			Wins:           user.Wins,
+			Loses:          user.Loses,
+			Rating:         user.Rating,
 		})
 }
 
@@ -38,7 +41,7 @@ func (cfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := cfg.db.GetUserByUsername(r.Context(), username)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
+		respondWithError(w, http.StatusNotFound, "Cannot find user", err)
 		return
 	}
 
@@ -47,6 +50,9 @@ func (cfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request) {
 			Username:		user.Username,
 			Email:			user.Email,
 			CreatedAt: 		user.CreatedAt,
+			Wins:           user.Wins,
+			Loses:          user.Loses,
+			Rating:         user.Rating,
 		})
 
 }

@@ -5,10 +5,20 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type Match struct {
+	ID          uuid.UUID
+	Player1ID   uuid.UUID
+	Player2ID   uuid.UUID
+	WinnerID    uuid.NullUUID
+	CreatedAt   time.Time
+	CompletedAt sql.NullTime
+}
 
 type User struct {
 	ID             uuid.UUID
@@ -16,4 +26,7 @@ type User struct {
 	Email          string
 	HashedPassword string
 	CreatedAt      time.Time
+	Wins           int32
+	Loses          int32
+	Rating         int32
 }

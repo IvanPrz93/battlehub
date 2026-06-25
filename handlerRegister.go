@@ -16,6 +16,9 @@ type User struct {
 	Email     		string    	`json:"email"`
 	HashedPassword 	string 		`json: "hashed_password"`
 	CreatedAt 		time.Time 	`json:"created_at"`
+	Wins           	int32		`json:"wins"`
+	Loses          	int32		`json:"loses"`
+	Rating         	int32		`json:"rating"`
 }
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +64,9 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 			Username:		user.Username,
 			Email:			user.Email,
 			CreatedAt: 		user.CreatedAt,
+			Wins:           user.Wins,
+			Loses:          user.Loses,
+			Rating:         user.Rating,
 		},
 	})
 }

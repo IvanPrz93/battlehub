@@ -13,9 +13,9 @@ import (
 )
 
 type apiConfig struct {
-	db             *database.Queries
-	platform       string
-	jwtSecret      string
+	db			*database.Queries
+	dbConn		*sql.DB
+	jwtSecret	string
 }
 
 func main() {
@@ -27,10 +27,7 @@ func main() {
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
 	}
-	platform := os.Getenv("PLATFORM")
-	if platform == "" {
-		log.Fatal("PLATFORM must be set")
-	}
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET environment variable is not set")
@@ -43,9 +40,9 @@ func main() {
 	dbQueries := database.New(dbConn)
 
 	apiCfg := apiConfig{
-		db:             dbQueries,
-		platform:       platform,
-		jwtSecret:      jwtSecret,
+		db:         dbQueries,
+		dbConn:		dbConn,
+		jwtSecret:  jwtSecret,
 	}
 
 	mux := http.NewServeMux()
@@ -56,6 +53,15 @@ func main() {
 	
 	mux.HandleFunc("GET /api/users/me", apiCfg.handlerMyProfile)
 	mux.HandleFunc("GET /api/users/{username}", apiCfg.handlerGetUser)
+
+	mux.HandleFunc("GET /api/users/me/matches", apiCfg.handlerMyMatchHistory)
+	mux.HandleFunc("GET /api/users/{username}/matches", apiCfg.handlerGetMatchHistory)
+
+	mux.HandleFunc("POST /api/matches", apiCfg.createNewMatch)
+	mux.HandleFunc("POST /api/matches/{id}/result/", apiCfg.endMatch)
+
+	mux.HandleFunc("GET /api/leaderboard", apiCfg.handlerLeaderboard)
+
 
 	srv := &http.Server{
 		Addr:    ":" + port,

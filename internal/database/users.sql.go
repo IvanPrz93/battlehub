@@ -20,7 +20,7 @@ VALUES (
     $3,
     NOW()
 )
-RETURNING id, username, email, hashed_password, created_at
+RETURNING id, username, email, hashed_password, created_at, wins, loses, rating
 `
 
 type CreateUserParams struct {
@@ -38,12 +38,63 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Email,
 		&i.HashedPassword,
 		&i.CreatedAt,
+		&i.Wins,
+		&i.Loses,
+		&i.Rating,
 	)
 	return i, err
 }
 
+const getLeaderboard = `-- name: GetLeaderboard :many
+SELECT 
+    ROW_NUMBER() OVER (ORDER BY rating DESC) AS rank, 
+    username,
+    wins,
+    loses,
+    rating
+FROM users
+LIMIT $1
+`
+
+type GetLeaderboardRow struct {
+	Rank     int64
+	Username string
+	Wins     int32
+	Loses    int32
+	Rating   int32
+}
+
+func (q *Queries) GetLeaderboard(ctx context.Context, limit int32) ([]GetLeaderboardRow, error) {
+	rows, err := q.db.QueryContext(ctx, getLeaderboard, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetLeaderboardRow
+	for rows.Next() {
+		var i GetLeaderboardRow
+		if err := rows.Scan(
+			&i.Rank,
+			&i.Username,
+			&i.Wins,
+			&i.Loses,
+			&i.Rating,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, hashed_password, created_at from users 
+SELECT id, username, email, hashed_password, created_at, wins, loses, rating from users 
 WHERE email = $1
 `
 
@@ -56,12 +107,15 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Email,
 		&i.HashedPassword,
 		&i.CreatedAt,
+		&i.Wins,
+		&i.Loses,
+		&i.Rating,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, email, hashed_password, created_at from users 
+SELECT id, username, email, hashed_password, created_at, wins, loses, rating from users 
 WHERE id = $1
 `
 
@@ -74,12 +128,15 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Email,
 		&i.HashedPassword,
 		&i.CreatedAt,
+		&i.Wins,
+		&i.Loses,
+		&i.Rating,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, email, hashed_password, created_at from users 
+SELECT id, username, email, hashed_password, created_at, wins, loses, rating from users 
 WHERE username = $1
 `
 
@@ -92,6 +149,44 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.Email,
 		&i.HashedPassword,
 		&i.CreatedAt,
+		&i.Wins,
+		&i.Loses,
+		&i.Rating,
+	)
+	return i, err
+}
+
+const updateUserResults = `-- name: UpdateUserResults :one
+UPDATE users
+SET wins = $2, loses = $3, rating = $4
+WHERE id = $1
+RETURNING id, username, email, hashed_password, created_at, wins, loses, rating
+`
+
+type UpdateUserResultsParams struct {
+	ID     uuid.UUID
+	Wins   int32
+	Loses  int32
+	Rating int32
+}
+
+func (q *Queries) UpdateUserResults(ctx context.Context, arg UpdateUserResultsParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserResults,
+		arg.ID,
+		arg.Wins,
+		arg.Loses,
+		arg.Rating,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.CreatedAt,
+		&i.Wins,
+		&i.Loses,
+		&i.Rating,
 	)
 	return i, err
 }
